@@ -89,4 +89,68 @@ function getSubmissionPoints(submission, assignment) {
   return submission.score;
 
 }
+function getLearnerData(course, assignmentGroup, learnerSubmissions) {
+  // If an AssignmentGroup does not belong to its course (mismatching course_id), your program should throw an error, letting the user know that the input was invalid. Similar data validation should occur elsewhere within the program.
+  if (assignmentGroup.course_id !== course.id) {
+    throw new Error('AssignmentGroup does not belong to its course');
+  }
+  // here, we would process this data to achieve the desired result.
+  const assignmentDetails = {};
+  assignmentGroup.assignments.filter(isValidAssignment).forEach((assignment) => {
+    assignmentDetails[assignment.id] = {
+      dueDate: new Date(assignment.due_at),
+      pointsPossible: assignment.points_possible,
+    };
+  });
+  console.log('assignmentDetails', assignmentDetails);
 
+  const learners = [];
+  for (let i = 0; i < learnerSubmissions.length; i++) {
+    const submission = learnerSubmissions[i];
+    // submission to learner
+    let learner = learners.find(x => x.learner_id === submission.learner_id);
+    if (!learner) {
+      learner = {
+        learner_id: submission.learner_id,
+        totalPointsGain: 0,
+        TotalPointsPossible: 0,
+        assignments: [],
+      };
+      learners.push(learner);
+    }
+    try {
+      const assignment = assignmentDetails[submission.assignment_id];
+      if (assignment === undefined) {
+        throw new Error('Assignment not found');
+      }
+      const pointsGain = getSubmissionPoints(submission.submission, assignmentDetails[submission.assignment_id]);
+      const pointsPossible = assignmentDetails[submission.assignment_id].pointsPossible;
+      learner.totalPointsGain += pointsGain;
+      learner.TotalPointsPossible += pointsPossible;
+      learner.assignments.push({
+        assignment_id: submission.assignment_id,
+        result: pointsGain / pointsPossible,
+      });
+    } catch (e) {
+      console.log('Error', e);
+    }
+  }
+
+  //Convert to result
+  const result = learners.map((learner) => {
+    const res = {};
+    learner.assignments.forEach((assignment) => {
+      res[assignment.assignment_id] = assignment.result;
+    });
+    res.id = learner.learner_id;
+    res.avg = learner.totalPointsGain / learner.TotalPointsPossible;
+
+    return res;
+  });
+
+  return result;
+}
+
+const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+
+console.log(result);
