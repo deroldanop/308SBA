@@ -74,3 +74,19 @@ const CourseInfo = {
       }
     }
   ];
+//////////////////////////////////
+
+
+const today = new Date();
+function isValidAssignment(assignment) {
+  return new Date(assignment.due_at) <= today && assignment.points_possible > 0;
+}
+
+function getSubmissionPoints(submission, assignment) {
+  if (new Date(submission.submitted_at) > assignment.dueDate) {
+    return submission.score * 0.9;
+  }
+  return submission.score;
+
+}
+
